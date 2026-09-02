@@ -8,16 +8,23 @@ const options: swaggerJSDoc.Options = {
       version: '1.0.0',
       description: 'Public API for integrating with Shopiators stores',
     },
-    servers: [
-      {
-        url: 'http://localhost:3000/api/v1',
-        description: 'Development server',
-      },
-      {
-        url: 'https://api.shopiators.com/api/v1',
-        description: 'Production server',
-      }
-    ],
+    servers: process.env.NODE_ENV === 'production' 
+      ? [
+          {
+            url: 'https://api.shopiators.com/api/v1',
+            description: 'Production server',
+          }
+        ]
+      : [
+          {
+            url: 'http://localhost:3000/api/v1',
+            description: 'Development server',
+          },
+          {
+            url: 'https://api.shopiators.com/api/v1',
+            description: 'Production server',
+          }
+        ],
     tags: [
       { name: 'Auth', description: 'Authentication endpoints' },
       { name: 'Products', description: 'Product management' },
