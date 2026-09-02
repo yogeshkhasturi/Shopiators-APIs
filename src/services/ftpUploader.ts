@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import fs from "fs-extra";
 import path from "path";
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
 
 const ftpConfig = {
     host: "91.98.249.17",
@@ -92,7 +92,7 @@ export const ftpUploader = {
                 let folder = options.folder || "";
                 folder = folder.replace(/^\/+/, '').replace(/\/+$/, '');
 
-                let filename = options.public_id || uuidv4();
+                let filename = options.public_id || crypto.randomUUID();
                 if (filename.includes('/')) {
                     const parts = filename.split('/');
                     filename = parts.pop();
