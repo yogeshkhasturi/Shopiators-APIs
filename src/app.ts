@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import pino from 'pino';
 import crypto from 'crypto';
+import path from 'path';
 
 // Initialize logger
 export const logger = pino({
@@ -20,6 +21,9 @@ export const logger = pino({
 });
 
 const app = express();
+
+// Serve static assets
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Security middleware
 app.use(helmet());
@@ -62,7 +66,7 @@ app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // Request logging
-app.use(pinoHttp({ 
+app.use(pinoHttp({
   logger,
   genReqId: function (req) { return (req.headers['x-request-id'] as string) || `req-${Date.now()}` }
 }));
@@ -82,8 +86,39 @@ import { swaggerSpec } from './docs/swagger';
 
 // Swagger UI
 app.use('/sandbox', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Shopiators API Docs'
+  customCss: `
+  .swagger-ui .topbar {
+  background-color: #fff;
+  }
+    .dark-mode .swagger-ui .topbar { background-color: #000000ff; padding: 10px 0; }
+    .swagger-ui .topbar .link svg { display: none; }
+    .swagger-ui .topbar .link img { display: none; }
+     .swagger-ui .topbar .link {
+      background: url('/shopiators-logo.png') no-repeat left center;
+      background-size: contain;
+      width: 200px;
+      height: 40px;
+      display: inline-block;
+}
+    .dark-mode .swagger-ui .topbar .link {
+      background: url('/shopiators-logo-white.png') no-repeat left center;
+      background-size: contain;
+      width: 200px;
+      height: 40px;
+      display: inline-block;
+    }
+      .swagger-ui .topbar .topbar-wrapper {
+    justify-content: space-between;
+}
+   .swagger-ui .topbar .dark-mode-toggle svg{
+    fill: #000!important;
+    }
+   .dark-mode .swagger-ui .topbar .dark-mode-toggle svg{
+    fill: #e0c216ff!important;
+    }
+  `,
+  customfavIcon: '/favicon.ico',
+  customSiteTitle: 'Shopiators API Sandbox'
 }));
 
 import productRoutes from './routes/v1/products';
@@ -104,6 +139,7 @@ app.get('/api/v1', (req, res) => {
 });
 
 import { ZodError } from 'zod';
+import { welcomeHtml } from './utils/welcomeHtml';
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -127,6 +163,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
       message: err.message || 'Internal Server Error'
     }
   });
+});
+
+app.get('/', (req, res) => {
+  res.send(welcomeHtml);
 });
 
 export default app;
