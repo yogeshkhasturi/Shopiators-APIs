@@ -126,6 +126,7 @@ import variantRoutes from './routes/v1/variants';
 import authRoutes from './routes/v1/auth';
 import collectionRoutes from './routes/v1/collections';
 import attributeRoutes from './routes/v1/attributes';
+import attributeSetRoutes from './routes/v1/attributeSets';
 
 // Base API route placeholder
 app.use('/api/v1/auth', authRoutes);
@@ -133,6 +134,7 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/products/:productId/variants', variantRoutes);
 app.use('/api/v1/collections', collectionRoutes);
 app.use('/api/v1/attributes', attributeRoutes);
+app.use('/api/v1/attribute-sets', attributeSetRoutes);
 
 app.get('/api/v1', (req, res) => {
   res.json({ message: 'Shopiators Public API v1' });
@@ -143,13 +145,15 @@ import { welcomeHtml } from './utils/welcomeHtml';
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err instanceof ZodError) {
+  if (err && err.name === 'ZodError') {
+    const zodErrors = err.issues || err.errors || [];
+    const errorMessage = zodErrors.length > 0 ? zodErrors[0].message : 'Invalid request data';
     res.status(400).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'Invalid request data',
-        details: (err as any).errors
+        message: errorMessage,
+        details: zodErrors
       }
     });
     return;

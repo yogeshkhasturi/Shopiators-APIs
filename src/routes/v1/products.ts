@@ -23,19 +23,63 @@ router.use(authenticate);
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 25
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: handle
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, disabled]
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, -createdAt, price, -price, title, -title]
  *     responses:
  *       200:
  *         description: A list of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
  *   post:
  *     summary: Create product
  *     description: |
- *       Creates a new product in the store. 
- *       
- *       **Instructions**:
- *       1. Provide a `title`.
- *       2. Optionally provide a `handle` (URL slug). If omitted, one will be generated from the title.
- *       3. Set the `status` to 'active', 'draft', or 'archived'.
- *       4. Link to existing `selectedCollections` (must be valid ObjectIds belonging to your store).
+ *       Creates a new product in the store.
+ *
+ *       **Notes**:
+ *       - `handle` is auto-generated from title if not provided (guaranteed unique).
+ *       - `comparePrice` must be **≥** `price`, otherwise a validation error is returned.
+ *       - `images` accepts URLs or base64 data URIs — they will be uploaded to FTP automatically.
+ *       - `selectedCollections` must be valid ObjectIds belonging to the same store.
+ *       - Providing `options` (e.g. Size, Color) will auto-generate variants and attribute combinations.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -50,66 +94,83 @@ router.use(authenticate);
  *             properties:
  *               title:
  *                 type: string
- *                 description: The name of the product
+ *                 example: "Premium Cotton T-Shirt"
  *               handle:
  *                 type: string
- *                 description: URL friendly slug
+ *                 description: URL slug. Must be unique per store. Auto-generated if omitted.
+ *                 example: "premium-cotton-t-shirt"
  *               description:
  *                 type: string
+ *                 example: "A comfortable 100% cotton t-shirt."
  *               status:
  *                 type: string
- *                 enum: [active, draft, archived]
+ *                 enum: [active, disabled]
+ *                 example: active
+ *               price:
+ *                 type: number
+ *                 example: 15.00
  *               comparePrice:
  *                 type: number
- *                 description: Original price for strike-through (mapped to salePrice)
+ *                 description: Compare at / original price. Must be >= price.
+ *                 example: 20.00
+ *               totalStock:
+ *                 type: number
+ *                 example: 100
+ *               images:
+ *                 type: array
+ *                 description: Array of image URLs or base64 data URIs
+ *                 items:
+ *                   type: string
+ *                 example: ["https://example.com/image1.jpg"]
  *               sizeChart:
  *                 type: string
  *                 description: URL or base64 data URI of the size chart
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Array of image URLs or base64 data URIs
+ *                 example: "https://example.com/sizechart.jpg"
  *               selectedCollections:
  *                 type: array
+ *                 description: Array of Collection ObjectIds
  *                 items:
  *                   type: string
- *                 description: Array of Collection ObjectIds
+ *                 example: []
  *               metaTitle:
  *                 type: string
+ *                 example: "Buy Premium Cotton T-Shirt Online"
  *               metaDescription:
  *                 type: string
+ *                 example: "100% Cotton T-Shirt in multiple sizes."
  *               options:
  *                 type: array
+ *                 description: Product variant options. Each option generates variants automatically.
  *                 items:
  *                   type: object
  *                   properties:
  *                     name:
  *                       type: string
+ *                       example: "Size"
  *                     values:
  *                       type: array
  *                       items:
  *                         type: string
- *             example:
- *               title: "Premium Cotton T-Shirt"
- *               handle: "premium-cotton-t-shirt"
- *               description: "A comfortable 100% cotton t-shirt."
- *               status: "active"
- *               price: 15.00
- *               comparePrice: 20.00
- *               metaTitle: "Buy Premium Cotton T-Shirt Online"
- *               metaDescription: "100% Cotton T-Shirt, available in multiple sizes and colors."
- *               images: ["https://example.com/image1.jpg"]
- *               sizeChart: "https://example.com/sizechart.jpg"
- *               selectedCollections: []
- *               options:
- *                 - name: "Size"
- *                   values: ["Small", "Medium", "Large"]
- *                 - name: "Color"
- *                   values: ["Red", "Blue"]
+ *                       example: ["Small", "Medium", "Large"]
  *     responses:
  *       201:
  *         description: Created product
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', requireScope('products:read'), ProductController.list);
 router.post('/', requireScope('products:write'), idempotencyMiddleware, ProductController.create);
@@ -118,7 +179,7 @@ router.post('/', requireScope('products:write'), idempotencyMiddleware, ProductC
  * @swagger
  * /products/{id}:
  *   get:
- *     summary: Get a product
+ *     summary: Get a product by ID
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -128,11 +189,31 @@ router.post('/', requireScope('products:write'), idempotencyMiddleware, ProductC
  *         required: true
  *         schema:
  *           type: string
+ *         example: "64f1e2b3c9e77b001f8e4ccc"
  *     responses:
  *       200:
  *         description: Product details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *   patch:
  *     summary: Update product
+ *     description: |
+ *       All fields are optional. `comparePrice` must remain >= `price` if both are provided.
+ *       Providing a `handle` that already belongs to another product will return a 400 error.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -153,30 +234,62 @@ router.post('/', requireScope('products:write'), idempotencyMiddleware, ProductC
  *                 type: string
  *               handle:
  *                 type: string
+ *                 description: Must be unique per store
  *               description:
  *                 type: string
  *               status:
  *                 type: string
- *                 enum: [active, draft, archived]
+ *                 enum: [active, disabled]
  *               price:
  *                 type: number
  *               comparePrice:
  *                 type: number
- *               sizeChart:
- *                 type: string
+ *                 description: Must be >= price
+ *               totalStock:
+ *                 type: number
  *               images:
  *                 type: array
+ *                 description: Existing URLs (kept as-is) or base64 data URIs (re-uploaded)
  *                 items:
  *                   type: string
+ *               sizeChart:
+ *                 type: string
  *               selectedCollections:
  *                 type: array
  *                 items:
  *                   type: string
+ *               metaTitle:
+ *                 type: string
+ *               metaDescription:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Updated product
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *   delete:
  *     summary: Delete product
+ *     description: Deletes a product along with its variants and attribute combinations (cascade delete).
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -189,9 +302,29 @@ router.post('/', requireScope('products:write'), idempotencyMiddleware, ProductC
  *     responses:
  *       200:
  *         description: Product deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/:id', requireScope('products:read'), ProductController.get);
 router.patch('/:id', requireScope('products:write'), ProductController.update);
 router.delete('/:id', requireScope('products:write'), ProductController.delete);
 
 export default router;
+

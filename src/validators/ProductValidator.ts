@@ -9,7 +9,7 @@ export const ProductQuerySchema = z.object({
   sort: z.enum(['createdAt', '-createdAt', 'price', '-price', 'title', '-title']).optional(),
 });
 
-export const ProductCreateSchema = z.object({
+const ProductBaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   handle: z.string().max(255).optional(),
   description: z.string().max(10000).optional(),
@@ -30,4 +30,22 @@ export const ProductCreateSchema = z.object({
   })).optional()
 });
 
-export const ProductUpdateSchema = ProductCreateSchema.partial();
+export const ProductCreateSchema = ProductBaseSchema.refine((data) => {
+  if (data.price !== undefined && data.comparePrice !== undefined) {
+    return data.price <= data.comparePrice;
+  }
+  return true;
+}, {
+  message: "price should be less than compare at price",
+  path: ["price"]
+});
+
+export const ProductUpdateSchema = ProductBaseSchema.partial().refine((data) => {
+  if (data.price !== undefined && data.comparePrice !== undefined) {
+    return data.price <= data.comparePrice;
+  }
+  return true;
+}, {
+  message: "price should be less than compare at price",
+  path: ["price"]
+});

@@ -1,5 +1,7 @@
 import Attribute from '../../models/Attribute.js';
 
+import AttributeValue from '../../models/AttributeValue.js';
+
 export class AttributeService {
   static async list(storeSlug: string, queryParams: any) {
     const { page = 1, limit = 25, search, sort = '-createdAt' } = queryParams;
@@ -42,17 +44,55 @@ export class AttributeService {
   }
 
   static async create(storeSlug: string, data: any) {
-    // In a full implementation, we'd validate attributeset and values belong to storeSlug
+    const valuesInput = data.values || [];
+    delete data.values; // We will set this after attribute creation
+
     const attribute = new Attribute({
       ...data,
       storeSlug
     });
     
     await attribute.save();
+
+    const resolvedValues = [];
+    if (valuesInput && Array.isArray(valuesInput)) {
+      for (const val of valuesInput) {
+        if (/^[0-9a-fA-F]{24}$/.test(val)) {
+          // It's an ObjectId
+          resolvedValues.push(val);
+        } else {
+          // It's a string name
+          let attrVal = await AttributeValue.findOne({ storeSlug, attribute: attribute._id, name: val });
+          if (!attrVal) {
+            attrVal = await AttributeValue.create({ storeSlug, attribute: attribute._id, name: val, value: val });
+          }
+          resolvedValues.push(attrVal._id);
+        }
+      }
+      attribute.values = resolvedValues;
+      await attribute.save();
+    }
+
     return attribute;
   }
 
   static async update(storeSlug: string, id: string, data: any) {
+    if (data.values && Array.isArray(data.values)) {
+      const resolvedValues = [];
+      for (const val of data.values) {
+        if (/^[0-9a-fA-F]{24}$/.test(val)) {
+          resolvedValues.push(val);
+        } else {
+          let attrVal = await AttributeValue.findOne({ storeSlug, attribute: id, name: val });
+          if (!attrVal) {
+            attrVal = await AttributeValue.create({ storeSlug, attribute: id, name: val, value: val });
+          }
+          resolvedValues.push(attrVal._id);
+        }
+      }
+      data.values = resolvedValues;
+    }
+
     const attribute = await Attribute.findOneAndUpdate(
       { _id: id, storeSlug },
       { $set: data },

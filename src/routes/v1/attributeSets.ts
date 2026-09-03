@@ -1,26 +1,26 @@
 import { Router } from 'express';
-import { AttributeController } from '../../controllers/AttributeController';
+import { AttributeSetController } from '../../controllers/AttributeSetController';
 import { authenticate, requireScope } from '../../middleware/auth';
 import { idempotencyMiddleware } from '../../middleware/idempotency';
 
 const router = Router();
 
-// Apply authentication to all attribute routes
+// Apply authentication to all attribute set routes
 router.use(authenticate);
 
 /**
  * @swagger
  * tags:
- *   name: Attributes
- *   description: Attribute management
+ *   name: Attribute Sets
+ *   description: Attribute Set management
  */
 
 /**
  * @swagger
- * /attributes:
+ * /attribute-sets:
  *   get:
- *     summary: List attributes
- *     tags: [Attributes]
+ *     summary: List attribute sets
+ *     tags: [Attribute Sets]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -39,13 +39,18 @@ router.use(authenticate);
  *         schema:
  *           type: string
  *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive]
+ *       - in: query
  *         name: sort
  *         schema:
  *           type: string
  *           enum: [createdAt, -createdAt, name, -name]
  *     responses:
  *       200:
- *         description: A list of attributes
+ *         description: A list of attribute sets
  *         content:
  *           application/json:
  *             schema:
@@ -57,16 +62,12 @@ router.use(authenticate);
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Attribute'
+ *                     $ref: '#/components/schemas/AttributeSet'
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  *   post:
- *     summary: Create attribute
- *     description: |
- *       Creates a new attribute. The `values` array accepts plain strings (e.g. "Red", "Blue").
- *       If an AttributeValue with that name already exists for this attribute, its ID will be reused.
- *       Otherwise a new AttributeValue will be created automatically.
- *     tags: [Attributes]
+ *     summary: Create attribute set
+ *     tags: [Attribute Sets]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -80,20 +81,14 @@ router.use(authenticate);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Color"
- *               attributeset:
+ *                 example: "Clothing Attributes"
+ *               status:
  *                 type: string
- *                 description: ObjectId of an existing AttributeSet
- *                 example: "64f1e2b3c9e77b001f8e4abc"
- *               values:
- *                 type: array
- *                 description: Array of value names (strings). IDs will be resolved/created automatically.
- *                 items:
- *                   type: string
- *                 example: ["Red", "Blue", "Green"]
+ *                 enum: [active, inactive]
+ *                 example: active
  *     responses:
  *       201:
- *         description: Created attribute
+ *         description: Created attribute set
  *         content:
  *           application/json:
  *             schema:
@@ -103,7 +98,7 @@ router.use(authenticate);
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/Attribute'
+ *                   $ref: '#/components/schemas/AttributeSet'
  *       400:
  *         description: Validation error
  *         content:
@@ -111,15 +106,15 @@ router.use(authenticate);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', requireScope('attributes:read'), AttributeController.list);
-router.post('/', requireScope('attributes:write'), idempotencyMiddleware, AttributeController.create);
+router.get('/', requireScope('attributes:read'), AttributeSetController.list);
+router.post('/', requireScope('attributes:write'), idempotencyMiddleware, AttributeSetController.create);
 
 /**
  * @swagger
- * /attributes/{id}:
+ * /attribute-sets/{id}:
  *   get:
- *     summary: Get an attribute by ID
- *     tags: [Attributes]
+ *     summary: Get an attribute set by ID
+ *     tags: [Attribute Sets]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -128,10 +123,10 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *         required: true
  *         schema:
  *           type: string
- *         example: "64f1e2b3c9e77b001f8e4aaa"
+ *         example: "64f1e2b3c9e77b001f8e4abc"
  *     responses:
  *       200:
- *         description: Attribute details
+ *         description: Attribute set details
  *         content:
  *           application/json:
  *             schema:
@@ -141,18 +136,16 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/Attribute'
+ *                   $ref: '#/components/schemas/AttributeSet'
  *       404:
- *         description: Attribute not found
+ *         description: Attribute set not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *   patch:
- *     summary: Update attribute
- *     description: |
- *       Updates an attribute. The `values` array accepts plain strings — same upsert logic as create applies.
- *     tags: [Attributes]
+ *     summary: Update attribute set
+ *     tags: [Attribute Sets]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -170,18 +163,13 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Size"
- *               attributeset:
+ *                 example: "Updated Attribute Set Name"
+ *               status:
  *                 type: string
- *                 example: "64f1e2b3c9e77b001f8e4abc"
- *               values:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["Small", "Medium", "Large"]
+ *                 enum: [active, inactive]
  *     responses:
  *       200:
- *         description: Updated attribute
+ *         description: Updated attribute set
  *         content:
  *           application/json:
  *             schema:
@@ -191,16 +179,16 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/Attribute'
+ *                   $ref: '#/components/schemas/AttributeSet'
  *       404:
- *         description: Attribute not found
+ *         description: Attribute set not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *   delete:
- *     summary: Delete attribute
- *     tags: [Attributes]
+ *     summary: Delete attribute set
+ *     tags: [Attribute Sets]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -211,7 +199,7 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *           type: string
  *     responses:
  *       200:
- *         description: Attribute deleted
+ *         description: Attribute set deleted
  *         content:
  *           application/json:
  *             schema:
@@ -226,14 +214,14 @@ router.post('/', requireScope('attributes:write'), idempotencyMiddleware, Attrib
  *                     id:
  *                       type: string
  *       404:
- *         description: Attribute not found
+ *         description: Attribute set not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', requireScope('attributes:read'), AttributeController.get);
-router.patch('/:id', requireScope('attributes:write'), idempotencyMiddleware, AttributeController.update);
-router.delete('/:id', requireScope('attributes:write'), AttributeController.delete);
+router.get('/:id', requireScope('attributes:read'), AttributeSetController.get);
+router.patch('/:id', requireScope('attributes:write'), idempotencyMiddleware, AttributeSetController.update);
+router.delete('/:id', requireScope('attributes:write'), AttributeSetController.delete);
 
 export default router;

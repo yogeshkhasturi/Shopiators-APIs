@@ -60,7 +60,6 @@ export class ProductService {
   }
 
   static async create(storeSlug: string, data: any) {
-    // 1. Generate handle if not provided
     let handle = data.handle;
     if (!handle) {
       handle = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -71,6 +70,14 @@ export class ProductService {
         count++;
       }
       handle = uniqueHandle;
+    } else {
+      const existingProduct = await Product.exists({ storeSlug, handle });
+      if (existingProduct) {
+        const error: any = new Error('Product with this handle already exists');
+        error.status = 400;
+        error.code = 'VALIDATION_ERROR';
+        throw error;
+      }
     }
 
     // 2. Map payload variations to MongoDB schema expectations
@@ -255,6 +262,16 @@ export class ProductService {
   }
 
   static async update(storeSlug: string, id: string, data: any) {
+    if (data.handle) {
+      const existingProduct = await Product.exists({ storeSlug, handle: data.handle, _id: { $ne: id } });
+      if (existingProduct) {
+        const error: any = new Error('Product with this handle already exists');
+        error.status = 400;
+        error.code = 'VALIDATION_ERROR';
+        throw error;
+      }
+    }
+
     if (data.selectedCollections && !data.selectedCollection) {
       data.selectedCollection = data.selectedCollections;
     }
