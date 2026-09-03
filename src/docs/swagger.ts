@@ -6,7 +6,7 @@ const options: swaggerJSDoc.Options = {
     info: {
       title: 'Shopiators Public API',
       version: '1.0.0',
-      description: 'Public API for integrating with Shopiators stores',
+      description: 'The Shopiators Public API is the official API for integrating applications, migration tools, technology partners and third-party services with Shopiators ecommerce stores.\n\nThe API provides programmatic access to supported Shopiators store resources and can be used for ecommerce integrations, migration workflows, catalog synchronization and supported data import/export workflows.',
     },
     servers: process.env.NODE_ENV === 'production'
       ? [

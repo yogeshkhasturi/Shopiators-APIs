@@ -36,7 +36,7 @@ export const ProductCreateSchema = ProductBaseSchema.refine((data) => {
   }
   return true;
 }, {
-  message: "price should be less than compare at price",
+  message: "price should be less than or equal to compare at price",
   path: ["price"]
 });
 

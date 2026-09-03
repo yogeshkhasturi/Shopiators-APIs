@@ -1,0 +1,41 @@
+# Shopiators Public API
+
+> Official public API for integrating applications, migration tools and third-party services with Shopiators ecommerce stores.
+
+## API Reference
+
+- [Shopiators API Sandbox](https://api.shopiators.com/sandbox/): Interactive Swagger/OpenAPI reference for the Shopiators Public API.
+- [OpenAPI Specification](https://api.shopiators.com/openapi.json): Machine-readable specification of the Shopiators Public API.
+- [API Documentation (LLM-friendly)](https://api.shopiators.com/llms-full.txt): A clean Markdown representation of the full API reference for AI agents.
+- [Shopiators Developer Documentation](https://docs.shopiators.com/): Official developer documentation.
+
+## API Capabilities
+
+The Shopiators Public API provides programmatic access to the following resources:
+
+- Authentication
+- Products
+- Product Variants
+- Collections
+- Attributes
+- Attribute Sets
+
+## Integration Use Cases
+
+The API is intended for:
+
+- Ecommerce integrations
+- Ecommerce migration workflows
+- Product/catalog import and export workflows
+- Catalog synchronization
+- Third-party integrations
+- Custom ecommerce applications
+- Technology and migration partners
+
+## Official Resources
+
+- Shopiators: https://shopiators.com/
+- Shopiators Developer Documentation: https://docs.shopiators.com/
+- Shopiators Public API: https://api.shopiators.com/
+- Shopiators API Sandbox: https://api.shopiators.com/sandbox/
+- OpenAPI Specification: https://api.shopiators.com/openapi.json

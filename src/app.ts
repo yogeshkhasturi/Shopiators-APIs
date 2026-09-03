@@ -83,9 +83,40 @@ app.get('/health/ready', (req, res) => {
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
+import { generateLlmsFullText } from './docs/llmsGenerator';
+
+// Expose Canonical OpenAPI Specification
+app.get('/openapi.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+// Expose dynamic LLM markdown
+app.get('/llms-full.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(generateLlmsFullText(swaggerSpec));
+});
+
+// Middleware to inject SEO meta and noscript into Swagger UI
+const swaggerHtmlModifier = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const originalSend = res.send;
+  res.send = function (body) {
+    if (typeof body === 'string' && body.includes('<title>')) {
+      body = body.replace(
+        '</head>',
+        '  <meta name="description" content="Shopiators Public API Sandbox. Explore and test the official Shopiators ecommerce API for integrations, migration workflows, catalog synchronization and supported data import and export.">\n</head>'
+      );
+      body = body.replace(
+        '<body>',
+        '<body>\n<noscript>\n<h1>Shopiators Public API</h1>\n<p>The official Shopiators Public API for integrating applications, migration tools and third-party services with Shopiators ecommerce stores.</p>\n<p>Use the Shopiators API Sandbox to explore and test available endpoints.</p>\n</noscript>'
+      );
+    }
+    return originalSend.call(this, body);
+  };
+  next();
+};
 
 // Swagger UI
-app.use('/sandbox', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+app.use('/sandbox', swaggerHtmlModifier, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: `
   .swagger-ui .topbar {
   background-color: #fff;
