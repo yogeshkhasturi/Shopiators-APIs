@@ -31,6 +31,9 @@ const options: swaggerJSDoc.Options = {
       { name: 'Collections', description: 'Collection management' },
       { name: 'Attribute Sets', description: 'Attribute Set management' },
       { name: 'Attributes', description: 'Attribute management' },
+      { name: 'Customers', description: 'Customer (Store User) management' },
+      { name: 'Addresses', description: 'Customer Address management' },
+      { name: 'Orders', description: 'Order management' },
     ],
     components: {
       securitySchemes: {
@@ -232,6 +235,106 @@ const options: swaggerJSDoc.Options = {
               },
             },
           },
+        },
+
+        // ─────────────────── Customer ───────────────────
+        Customer: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '64f1e2b3c9e77b001f8e4ccc' },
+            userName: { type: 'string', example: 'johndoe123' },
+            email: { type: 'string', example: 'john@example.com' },
+            firstName: { type: 'string', example: 'John' },
+            lastName: { type: 'string', example: 'Doe' },
+            businessName: { type: 'string', example: 'Doe Industries' },
+            phoneNumber: { type: 'string', example: '+1234567890' },
+            role: { type: 'string', example: 'user' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          }
+        },
+
+        // ─────────────────── Address Payload ───────────────────
+        AddressPayload: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '64f1e2b3c9e77b001f8e4cdd' },
+            name: { type: 'string', example: 'Home Address' },
+            email: { type: 'string', example: 'john@example.com' },
+            house: { type: 'string', example: 'Apt 4B' },
+            street: { type: 'string', example: '123 Main St' },
+            landmark: { type: 'string', example: 'Near Central Park' },
+            city: { type: 'string', example: 'New York' },
+            stateName: { type: 'string', example: 'New York' },
+            countryName: { type: 'string', example: 'United States' },
+            pincode: { type: 'string', example: '10001' },
+            phone: { type: 'string', example: '+1234567890' },
+            addressType: { type: 'string', enum: ['Home', 'Work', 'Other'], example: 'Home' },
+            isDefault: { type: 'boolean', example: true },
+          }
+        },
+
+        // ─────────────────── Address ───────────────────
+        Address: {
+          type: 'object',
+          properties: {
+            firstName: { type: 'string', example: 'John' },
+            lastName: { type: 'string', example: 'Doe' },
+            address1: { type: 'string', example: '123 Main St' },
+            address2: { type: 'string', example: 'Apt 4B' },
+            city: { type: 'string', example: 'New York' },
+            state: { type: 'string', example: 'NY' },
+            zip: { type: 'string', example: '10001' },
+            country: { type: 'string', example: 'USA' },
+            phone: { type: 'string', example: '+1234567890' },
+          }
+        },
+
+        // ─────────────────── Order ───────────────────
+        Order: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '64f1e2b3c9e77b001f8e4ccc' },
+            customOrderId: { type: 'string', example: 'ORD-1698765432-ABC' },
+            userId: { type: 'string' },
+            cartItems: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  productId: { type: 'string' },
+                  title: { type: 'string', example: 'Premium T-Shirt' },
+                  price: { type: 'number', example: 25.00 },
+                  quantity: { type: 'number', example: 2 },
+                  sku: { type: 'string', example: 'TSHIRT-01' },
+                }
+              }
+            },
+            shippingAddress: { $ref: '#/components/schemas/Address' },
+            billingAddress: { $ref: '#/components/schemas/Address' },
+            contactEmail: { type: 'string', example: 'customer@example.com' },
+            orderStatus: { type: 'string', example: 'pending' },
+            paymentMethod: { type: 'string', example: 'credit_card' },
+            paymentStatus: { type: 'string', example: 'paid' },
+            subTotal: { type: 'number', example: 50.00 },
+            shippingCharge: { type: 'number', example: 5.00 },
+            taxAmount: { type: 'number', example: 5.50 },
+            totalAmount: { type: 'number', example: 60.50 },
+            currency: { type: 'string', example: 'USD' },
+            trackingInfo: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  trackingNumber: { type: 'string' },
+                  shippingCarrier: { type: 'string' },
+                  trackingUrl: { type: 'string' }
+                }
+              }
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          }
         },
       },
     },

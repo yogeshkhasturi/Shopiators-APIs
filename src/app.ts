@@ -158,9 +158,15 @@ import authRoutes from './routes/v1/auth';
 import collectionRoutes from './routes/v1/collections';
 import attributeRoutes from './routes/v1/attributes';
 import attributeSetRoutes from './routes/v1/attributeSets';
+import orderRoutes from './routes/v1/orders';
+import customerRoutes from './routes/v1/customers';
+import addressRoutes from './routes/v1/addresses';
 
 // Base API route placeholder
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/customers', customerRoutes);
+app.use('/api/v1/addresses', addressRoutes);
+app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/products/:productId/variants', variantRoutes);
 app.use('/api/v1/collections', collectionRoutes);

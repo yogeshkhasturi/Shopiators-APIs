@@ -42,8 +42,10 @@ export class AuthService {
         'products:read', 'products:write',
         'collections:read', 'collections:write',
         'customers:read', 'customers:write',
+        'addresses:read', 'addresses:write',
         'attributes:read', 'attributes:write',
-        'variants:read', 'variants:write'
+        'variants:read', 'variants:write',
+        'orders:read', 'orders:write',
       ]
     };
 
