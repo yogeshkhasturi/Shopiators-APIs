@@ -163,6 +163,7 @@ import attributeSetRoutes from './routes/v1/attributeSets';
 import orderRoutes from './routes/v1/orders';
 import customerRoutes from './routes/v1/customers';
 import addressRoutes from './routes/v1/addresses';
+import adminLogsRoutes from './routes/v1/adminLogs';
 
 // Base API route placeholder
 app.use('/api/v1/auth', authRoutes);
@@ -174,6 +175,7 @@ app.use('/api/v1/products/:productId/variants', variantRoutes);
 app.use('/api/v1/collections', collectionRoutes);
 app.use('/api/v1/attributes', attributeRoutes);
 app.use('/api/v1/attribute-sets', attributeSetRoutes);
+app.use('/api/v1/admin/logs', adminLogsRoutes);
 
 app.get('/api/v1', (req, res) => {
   res.json({ message: 'Shopiators Public API v1' });
