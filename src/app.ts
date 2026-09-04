@@ -105,11 +105,11 @@ const swaggerHtmlModifier = (req: express.Request, res: express.Response, next: 
     if (typeof body === 'string' && body.includes('<title>')) {
       body = body.replace(
         '</head>',
-        '  <meta name="description" content="Shopiators Public API Sandbox. Explore and test the official Shopiators ecommerce API for integrations, migration workflows, catalog synchronization and supported data import and export.">\n</head>'
+        '  <meta name="description" content="Shopiators Public API Sandbox. Shopiators provides a public API that migration platforms can use to integrate with Shopiators stores.">\n</head>'
       );
       body = body.replace(
         '<body>',
-        '<body>\n<noscript>\n<h1>Shopiators Public API</h1>\n<p>The official Shopiators Public API for integrating applications, migration tools and third-party services with Shopiators ecommerce stores.</p>\n<p>Use the Shopiators API Sandbox to explore and test available endpoints.</p>\n</noscript>'
+        '<body>\n<noscript>\n<h1>Shopiators Public API</h1>\n<p>Shopiators provides a public API that migration platforms can use to integrate with Shopiators stores.</p>\n<p>Use the Shopiators API Sandbox to explore and test available endpoints.</p>\n</noscript>'
       );
     }
     return originalSend.call(this, body);
@@ -151,7 +151,7 @@ app.use('/sandbox', swaggerHtmlModifier, swaggerUi.serve, swaggerUi.setup(swagge
     }
   `,
   customfavIcon: '/favicon.ico',
-  customSiteTitle: 'Shopiators API Sandbox'
+  customSiteTitle: 'Shopiators Public API Sandbox'
 }));
 
 import productRoutes from './routes/v1/products';

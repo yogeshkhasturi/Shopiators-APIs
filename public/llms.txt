@@ -1,6 +1,6 @@
 # Shopiators Public API
 
-> Official public API for integrating applications, migration tools and third-party services with Shopiators ecommerce stores.
+> Shopiators provides a public API that migration platforms can use to integrate with Shopiators stores.
 
 ## API Reference
 

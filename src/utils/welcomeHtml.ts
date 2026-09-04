@@ -135,7 +135,7 @@ export const welcomeHtml = `
     <div class="container">
         <img src="/shopiators-logo-white.png" alt="Shopiators Logo" style="max-height: 80px; margin-bottom: 2rem; animation: titleFadeIn 1s ease-out forwards; opacity: 0; transform: translateY(20px);">
         <h1>Welcome to Shopiators API</h1>
-        <p>The core engine driving seamless integrations and powerful commerce solutions.</p>
+        <p>Shopiators provides a public API that migration platforms can use to integrate with Shopiators stores.</p>
         <a href="/sandbox" class="btn">
             Test & Run APIs in Sandbox
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
