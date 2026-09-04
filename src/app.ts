@@ -1,4 +1,5 @@
 import express from 'express';
+import { apiLogger } from './middleware/apiLogger';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -22,6 +23,12 @@ export const logger = pino({
 
 const app = express();
 
+app.set('trust proxy', 1);
+
+import { cleanupOldLogs } from './utils/logManager';
+// Run cleanup asynchronously on startup
+cleanupOldLogs();
+
 // Serve static assets
 app.use(express.static(path.join(process.cwd(), 'public')));
 
@@ -40,13 +47,8 @@ app.use(cors({
   }
 }));
 
-// Request ID middleware
-app.use((req, res, next) => {
-  const reqId = req.headers['x-request-id'] || crypto.randomUUID();
-  req.headers['x-request-id'] = reqId;
-  res.setHeader('X-Request-ID', reqId);
-  next();
-});
+// API Logger and Request ID middleware
+app.use(apiLogger);
 
 // Rate limiting (tenant based if auth exists, else IP)
 const limiter = rateLimit({
@@ -185,24 +187,28 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   if (err && err.name === 'ZodError') {
     const zodErrors = err.issues || err.errors || [];
     const errorMessage = zodErrors.length > 0 ? zodErrors[0].message : 'Invalid request data';
+    const errorData = {
+      code: 'VALIDATION_ERROR',
+      message: errorMessage,
+      details: zodErrors
+    };
+    res.locals.errorData = errorData;
     res.status(400).json({
       success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: errorMessage,
-        details: zodErrors
-      }
+      error: errorData
     });
     return;
   }
 
   logger.error(err);
+  const errorData = {
+    code: err.code || 'INTERNAL_ERROR',
+    message: err.message || 'Internal Server Error'
+  };
+  res.locals.errorData = errorData;
   res.status(err.status || 500).json({
     success: false,
-    error: {
-      code: err.code || 'INTERNAL_ERROR',
-      message: err.message || 'Internal Server Error'
-    }
+    error: errorData
   });
 });
 
