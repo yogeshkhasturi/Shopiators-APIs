@@ -39,43 +39,49 @@ export class LogRepository {
         crlfDelay: Infinity,
       });
 
-      for await (const line of rl) {
-        if (!line.trim()) continue;
+      await new Promise<void>((resolve) => {
+        rl.on('line', (line) => {
+          if (!line.trim()) return;
 
-        try {
-          const logEntry = JSON.parse(line);
+          try {
+            const logEntry = JSON.parse(line);
 
-          // Apply filters
-          if (filter.startDate && new Date(logEntry.timestamp) < new Date(filter.startDate)) continue;
-          if (filter.endDate && new Date(logEntry.timestamp) > new Date(filter.endDate)) continue;
-          if (filter.requestId && logEntry.request_id !== filter.requestId) continue;
-          if (filter.method && logEntry.method !== filter.method) continue;
-          if (filter.path && logEntry.path !== filter.path) continue;
-          if (filter.statusCode && logEntry.statusCode !== filter.statusCode) continue;
-          if (filter.tenantId && logEntry.tenantId !== filter.tenantId) continue;
-          if (filter.appId && logEntry.appId !== filter.appId) continue;
-          if (filter.errorCode && logEntry.errorCode !== filter.errorCode) continue;
-          if (filter.minDuration && logEntry.durationMs < filter.minDuration) continue;
-          if (filter.maxDuration && logEntry.durationMs > filter.maxDuration) continue;
+            // Apply filters
+            if (filter.startDate && new Date(logEntry.timestamp) < new Date(filter.startDate)) return;
+            if (filter.endDate && new Date(logEntry.timestamp) > new Date(filter.endDate)) return;
+            if (filter.requestId && logEntry.request_id !== filter.requestId) return;
+            if (filter.method && logEntry.method !== filter.method) return;
+            if (filter.path && logEntry.path !== filter.path) return;
+            if (filter.statusCode && logEntry.statusCode !== filter.statusCode) return;
+            if (filter.tenantId && logEntry.tenantId !== filter.tenantId) return;
+            if (filter.appId && logEntry.appId !== filter.appId) return;
+            if (filter.errorCode && logEntry.errorCode !== filter.errorCode) return;
+            if (filter.minDuration && logEntry.durationMs < filter.minDuration) return;
+            if (filter.maxDuration && logEntry.durationMs > filter.maxDuration) return;
 
-          // Search
-          if (searchStr) {
-            const matchesSearch = 
-              (logEntry.request_id && logEntry.request_id.toLowerCase().includes(searchStr)) ||
-              (logEntry.path && logEntry.path.toLowerCase().includes(searchStr)) ||
-              (logEntry.tenantId && logEntry.tenantId.toLowerCase().includes(searchStr)) ||
-              (logEntry.appId && logEntry.appId.toLowerCase().includes(searchStr)) ||
-              (logEntry.errorCode && logEntry.errorCode.toLowerCase().includes(searchStr)) ||
-              (logEntry.errorMessage && logEntry.errorMessage.toLowerCase().includes(searchStr));
-            
-            if (!matchesSearch) continue;
+            // Search
+            if (searchStr) {
+              const matchesSearch = 
+                (logEntry.request_id && logEntry.request_id.toLowerCase().includes(searchStr)) ||
+                (logEntry.path && logEntry.path.toLowerCase().includes(searchStr)) ||
+                (logEntry.tenantId && logEntry.tenantId.toLowerCase().includes(searchStr)) ||
+                (logEntry.appId && logEntry.appId.toLowerCase().includes(searchStr)) ||
+                (logEntry.errorCode && logEntry.errorCode.toLowerCase().includes(searchStr)) ||
+                (logEntry.errorMessage && logEntry.errorMessage.toLowerCase().includes(searchStr));
+              
+              if (!matchesSearch) return;
+            }
+
+            logs.push(logEntry);
+          } catch (error) {
+            // Ignore malformed lines
           }
+        });
 
-          logs.push(logEntry);
-        } catch (error) {
-          // Ignore malformed lines
-        }
-      }
+        rl.on('close', () => {
+          resolve();
+        });
+      });
     }
 
     return logs;
@@ -96,19 +102,28 @@ export class LogRepository {
         crlfDelay: Infinity,
       });
 
-      for await (const line of rl) {
-        if (!line.trim()) continue;
+      const foundLog = await new Promise<any | null>((resolve) => {
+        let found: any = null;
+        rl.on('line', (line) => {
+          if (!line.trim() || found) return;
 
-        try {
-          const logEntry = JSON.parse(line);
-          if (logEntry.request_id === requestId) {
-            rl.close();
-            return logEntry;
+          try {
+            const logEntry = JSON.parse(line);
+            if (logEntry.request_id === requestId) {
+              found = logEntry;
+              rl.close();
+            }
+          } catch (error) {
+            // Ignore malformed lines
           }
-        } catch (error) {
-          // Ignore malformed lines
-        }
-      }
+        });
+
+        rl.on('close', () => {
+          resolve(found);
+        });
+      });
+
+      if (foundLog) return foundLog;
     }
 
     return null;
