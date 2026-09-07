@@ -14,6 +14,13 @@ declare global {
 }
 
 export const apiLogger = (req: Request, res: Response, next: NextFunction) => {
+  const pathUrl = req.originalUrl || req.path;
+  
+  // Skip logging for sandbox and Swagger requests
+  if (pathUrl.startsWith('/sandbox')) {
+    return next();
+  }
+
   // 1. Generate unique request ID
   const requestId = `req_${crypto.randomUUID().replace(/-/g, '')}`;
   req.id = requestId;
