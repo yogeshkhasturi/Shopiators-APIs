@@ -164,6 +164,9 @@ import orderRoutes from './routes/v1/orders';
 import customerRoutes from './routes/v1/customers';
 import addressRoutes from './routes/v1/addresses';
 import adminLogsRoutes from './routes/v1/adminLogs';
+import storeRoutes from './routes/v1/store';
+import inventoryRoutes from './routes/v1/inventory';
+import analyticsRoutes from './routes/v1/analytics';
 
 // Base API route placeholder
 app.use('/api/v1/auth', authRoutes);
@@ -175,6 +178,9 @@ app.use('/api/v1/products/:productId/variants', variantRoutes);
 app.use('/api/v1/collections', collectionRoutes);
 app.use('/api/v1/attributes', attributeRoutes);
 app.use('/api/v1/attribute-sets', attributeSetRoutes);
+app.use('/api/v1/store', storeRoutes);
+app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/admin/logs', adminLogsRoutes);
 
 app.get('/api/v1', (req, res) => {

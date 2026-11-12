@@ -69,4 +69,30 @@ const authLimiter = rateLimit({
  */
 router.post('/', authLimiter, AuthController.login);
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Exchange a valid refresh token for a new access token and rotated refresh token.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tokens refreshed
+ *       401:
+ *         description: Invalid or expired refresh token
+ */
+router.post('/refresh', authLimiter, AuthController.refresh);
+
 export default router;

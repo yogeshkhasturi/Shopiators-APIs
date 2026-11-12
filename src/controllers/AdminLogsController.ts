@@ -48,6 +48,9 @@ const getStatsSchema = z.object({
 export const getLogs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const params = getLogsSchema.parse(req.query);
+    if (req.tenant) {
+      params.tenantId = req.tenant.storeSlug;
+    }
     const result = await AdminLogsService.getLogs(params);
 
     res.status(200).json({
@@ -62,6 +65,9 @@ export const getLogs = async (req: Request, res: Response, next: NextFunction): 
 export const getStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const params = getStatsSchema.parse(req.query);
+    if (req.tenant) {
+      params.tenantId = req.tenant.storeSlug;
+    }
     const stats = await AdminLogsService.getStats(params);
 
     res.status(200).json({
@@ -76,16 +82,16 @@ export const getStats = async (req: Request, res: Response, next: NextFunction):
 export const getLogById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const requestId = req.params.requestId as string;
-    
+
     // basic validation to prevent arbitrary large strings
     if (!requestId || typeof requestId !== 'string' || requestId.length > 100) {
-      res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST_ID', message: 'Invalid Request ID format' }});
+      res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST_ID', message: 'Invalid Request ID format' } });
       return;
     }
 
     const log = await AdminLogsService.getLogById(requestId);
 
-    if (!log) {
+    if (!log || (req.tenant && log.tenantId !== req.tenant.storeSlug)) {
       res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Log not found' } });
       return;
     }

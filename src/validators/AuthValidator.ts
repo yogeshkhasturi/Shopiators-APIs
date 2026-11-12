@@ -5,3 +5,7 @@ export const AuthLoginSchema = z.object({
   email: z.string().email('Invalid email format').max(255).toLowerCase().trim(),
   password: z.string().min(1, 'Password is required').max(1000)
 });
+
+export const AuthRefreshSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required').max(512)
+});

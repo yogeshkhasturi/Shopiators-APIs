@@ -19,7 +19,7 @@ declare global {
 export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
@@ -30,17 +30,23 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       });
       return;
     }
-    
-    const token = authHeader.substring(7);
-    
-    if (token.startsWith('sk_live_')) {
+
+    let token = authHeader.substring(7).trim();
+    if (/^Bearer\s+/i.test(token)) {
+      token = token.replace(/^Bearer\s+/i, '').trim();
+    }
+    if ((token.startsWith('"') && token.endsWith('"')) || (token.startsWith("'") && token.endsWith("'"))) {
+      token = token.slice(1, -1).trim();
+    }
+
+    if (token.startsWith('sk_live_') || token.startsWith('sk_test_')) {
       const credential = await ApiKeyService.validateKey(token);
-      
+
       if (!credential) {
         res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid API Key' } });
         return;
       }
-      
+
       req.tenant = {
         storeSlug: credential.storeSlug,
         scopes: credential.scopes || [],
@@ -72,7 +78,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' } });
       return;
     }
-    
+
   } catch (error) {
     next(error);
   }
@@ -81,15 +87,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 export const requireScope = (requiredScope: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.tenant) {
-       res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } });
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } });
       return;
     }
-    
+
     if (!req.tenant.scopes.includes(requiredScope) && !req.tenant.scopes.includes('all')) {
-       res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: `Missing required scope: ${requiredScope}` } });
+      res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: `Missing required scope: ${requiredScope}` } });
       return;
     }
-    
+
     next();
   };
 };

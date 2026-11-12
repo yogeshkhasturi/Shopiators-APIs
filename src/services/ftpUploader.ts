@@ -5,17 +5,51 @@ import path from "path";
 import axios from "axios";
 import crypto from "crypto";
 
-const ftpConfig = {
-    host: "91.98.249.17",
-    port: 23,
-    user: "u647128",
-    password: "nU§(!t§TMK^MNZ2"
-};
+interface SftpConfig {
+    host: string;
+    port: number;
+    user: string;
+    password: string;
+    basePath: string;
+    publicBaseUrl: string;
+}
 
-const FTP_BASE_PATH = "/home/shopiators/store-assets";
-const PUBLIC_BASE_URL = "https://images.webiators.com/shopiators/store-assets";
+const DEFAULT_FTP_BASE_PATH = "/home/shopiators/store-assets";
+const DEFAULT_PUBLIC_BASE_URL = "https://images.webiators.com/shopiators/store-assets";
+
+export function validateSftpConfig(): SftpConfig {
+    const missing: string[] = [];
+    const host = process.env.SFTP_HOST?.trim();
+    const portRaw = process.env.SFTP_PORT?.trim();
+    const user = process.env.SFTP_USER?.trim();
+    const password = process.env.SFTP_PASSWORD;
+
+    if (!host) missing.push("SFTP_HOST");
+    if (!portRaw) missing.push("SFTP_PORT");
+    if (!user) missing.push("SFTP_USER");
+    if (!password) missing.push("SFTP_PASSWORD");
+
+    if (missing.length > 0) {
+        throw new Error(`Missing required SFTP environment variables: ${missing.join(", ")}`);
+    }
+
+    const port = Number(portRaw);
+    if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+        throw new Error("Invalid SFTP_PORT environment variable: must be a valid TCP port (1-65535)");
+    }
+
+    return {
+        host: host!,
+        port,
+        user: user!,
+        password: password!,
+        basePath: process.env.SFTP_BASE_PATH?.trim() || DEFAULT_FTP_BASE_PATH,
+        publicBaseUrl: (process.env.SFTP_PUBLIC_BASE_URL?.trim() || DEFAULT_PUBLIC_BASE_URL).replace(/\/+$/, ""),
+    };
+}
 
 async function uploadToFTP(buffer: Buffer, filename: string, folder?: string) {
+    const ftpConfig = validateSftpConfig();
     const client = new SftpClient();
 
     try {
@@ -26,9 +60,9 @@ async function uploadToFTP(buffer: Buffer, filename: string, folder?: string) {
             password: ftpConfig.password
         });
 
-        let targetFolder = FTP_BASE_PATH;
+        let targetFolder = ftpConfig.basePath;
         if (folder) {
-            targetFolder = `${FTP_BASE_PATH}/${folder}`;
+            targetFolder = `${ftpConfig.basePath}/${folder}`;
         }
 
         const dirExists = await client.exists(targetFolder);
@@ -48,7 +82,7 @@ async function uploadToFTP(buffer: Buffer, filename: string, folder?: string) {
         await client.put(buffer, remotePath);
 
         const urlPath = folder ? `${folder}/${filename}` : filename;
-        return `${PUBLIC_BASE_URL}/${urlPath}`;
+        return `${ftpConfig.publicBaseUrl}/${urlPath}`;
     } catch (err) {
         console.error("SFTP Upload Error:", err);
         throw err;

@@ -53,13 +53,30 @@ export class ApiKeyService {
     }
     
     const [prefix, env, keyId, secret] = parts;
-    
+    if (prefix !== 'sk' || (env !== 'live' && env !== 'test') || !keyId || !secret) {
+      return null;
+    }
+
     const credential = await ApiCredential.findOne({ keyId, status: 'active' });
     if (!credential) {
       return null;
     }
-    
-    const isValid = await bcrypt.compare(secret, credential.secretHash);
+
+    if (credential.expiresAt && new Date(credential.expiresAt) <= new Date()) {
+      return null;
+    }
+
+    let isValid = false;
+    if (typeof credential.secretHash === 'string' && credential.secretHash.startsWith('$2')) {
+      isValid = await bcrypt.compare(secret, credential.secretHash);
+    } else if (typeof credential.secretHash === 'string' && /^[a-f0-9]{64}$/i.test(credential.secretHash)) {
+      // Legacy SHA-256 grace-period support for keys generated before bcrypt standardization
+      const sha256Hex = crypto.createHash('sha256').update(secret).digest('hex');
+      const a = Buffer.from(sha256Hex, 'hex');
+      const b = Buffer.from(credential.secretHash, 'hex');
+      isValid = a.length === b.length && crypto.timingSafeEqual(a, b);
+    }
+
     if (!isValid) {
       return null;
     }

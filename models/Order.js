@@ -205,4 +205,6 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+OrderSchema.index({ storeSlug: 1, orderDate: -1, orderStatus: 1 });
+
 module.exports = mongoose.model("Order", OrderSchema);
